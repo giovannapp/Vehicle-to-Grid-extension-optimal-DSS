@@ -64,9 +64,8 @@ Replaces DSS installation constraint:
 
 $$S_{i,t}^{EV} = N_{i,t}^{av} \cdot \bar{E}_{EV} \cdot DoD_{max}$$
 
-Where Eˉ_EV\bar{E}\_{EV}
-Eˉ_EV is average battery size and DoD_maxDoD\_{max}
-DoD_max is max allowed depth of discharge for V2G use.
+Where $\bar{E}\_{EV}$ is average battery size and $DoD\_{max}$ is max allowed depth of discharge for V2G use.
+
 
 #### 2. State of Charge on Departure
 Critical — owner must leave with enough charge:
