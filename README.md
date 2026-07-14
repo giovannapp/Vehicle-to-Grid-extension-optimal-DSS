@@ -7,7 +7,7 @@
 
 The original paper finds *where to install* DSSs and *how big* to make them, treating storage as a capital investment. This V2G extension flips the question:
 
-> **"How much should we pay EV owners for grid services, and which EVs should we aggregate at which buses, to replace what dedicated DSSs would have done — at lower total cost?"**
+> **"How much should we pay EV owners for grid services, and which EVs should we aggregate at which buses, to replace what dedicated DSSs would have done:  at lower total cost?"**
 
 This reframes the optimization from a **placement + sizing problem** into a **pricing + aggregation + scheduling problem**.
 
@@ -42,7 +42,7 @@ So the new investment-equivalent term becomes:
 $$C_{V2G} = \sum_{i} \sum_{t} \lambda_i^{comp} \cdot |P_{i,t}^{EV}| \cdot \Delta t + \sum_{i} C_i^{deg} \cdot |P_{i,t}^{EV}| \cdot \Delta t$$
 
 Where:
-- $\lambda_i^{comp}$ = compensation rate paid to EV owner at bus $i$ ($/kWh) — the main new decision variable
+- $\lambda_i^{comp}$ = compensation rate paid to EV owner at bus $i$ ($/kWh):  the main new decision variable
 - $C_i^{deg}$ = battery degradation cost per kWh cycled (a parameter, not a variable)
 
 The optimization also needs to find the **optimal compensation rate** that makes participation attractive enough to guarantee a target fleet availability, while minimizing total DNO cost.
@@ -51,11 +51,11 @@ The optimization also needs to find the **optimal compensation rate** that makes
 
 Beyond what the paper already has:
 
-- $\lambda_i^{comp}$ — compensation rate per bus (or zone)
-- $N_{i,t}^{av}$ — number of EVs available at bus $i$ at time $t$ (stochastic, becomes a scenario parameter)
-- $E_{i,t}^{arr}$ — energy on arrival of EVs at bus $i$ (stochastic)
-- $x_{i,t}^{EV} \in \{0,1\}$ — whether the aggregated EV fleet at bus $i$ is contracted for grid service at time $t$
-- $P_{i,t}^{ch}$, $P_{i,t}^{dis}$ — charging and discharging power of the EV fleet at bus $i$
+- $\lambda_i^{comp}$:  compensation rate per bus (or zone)
+- $N_{i,t}^{av}$:  number of EVs available at bus $i$ at time $t$ (stochastic, becomes a scenario parameter)
+- $E_{i,t}^{arr}$:  energy on arrival of EVs at bus $i$ (stochastic)
+- $x_{i,t}^{EV} \in \{0,1\}$:  whether the aggregated EV fleet at bus $i$ is contracted for grid service at time $t$
+- $P_{i,t}^{ch}$, $P_{i,t}^{dis}$:  charging and discharging power of the EV fleet at bus $i$
 
 ### Constraints That Change or Are Added
 
@@ -68,42 +68,42 @@ Where $\bar{E}\_{EV}$ is average battery size and $DoD\_{max}$ is max allowed de
 
 
 #### 2. State of Charge on Departure
-Critical — owner must leave with enough charge:
+Critical: owner must leave with enough charge:
 
 $$E_{i,t_{dep}}^{EV} \geq E_{i}^{min,dep} \quad \forall i, t_{dep}$$
 
 This guarantees owners always leave with at least (say) 80% SoC. This directly limits how much energy the grid can extract and is likely the most binding constraint in the entire model.
 
 #### 3. Participation Willingness Constraint
-New — economic rationality constraint:
+New:  economic rationality constraint:
 
 $$\lambda_i^{comp} \geq C_i^{deg} + C_i^{opp}$$
 
-Where $C_i^{opp}$ is the opportunity cost of not using that charge for driving (related to electricity retail price). Below this threshold, rational owners won't participate.
+Where $C_i^{opp}$ is the opportunity cost of not using that charge for driving (related to the electricity retail price). Below this threshold, rational owners won't participate.
 
 #### 4. Fleet Size Uncertainty
 Replaces fixed DSS capacity:
 
 $$P_{i,t}^{EV,max} = N_{i,t}^{av} \cdot P_{charger}^{max}$$
 
-This is now stochastic — unlike DSS capacity which is deterministic once installed.
+This is now stochastic: unlike DSS capacity, which is deterministic once installed.
 
 #### 5. Battery Degradation Model
 
 $$C_i^{deg} = \frac{C_{battery}}{L_{cycle} \cdot 2 \cdot E_{EV}}$$
 
-Where $L_{cycle}$ is cycle life of the battery. A typical Li-ion EV battery costs ~$150/kWh to replace with ~2000 full cycles, giving ~**$0.038/kWh degradation cost** — this becomes the floor for owner compensation.
+Where $L_{cycle}$ is the cycle life of the battery. A typical Li-ion EV battery costs ~$150/kWh to replace, with ~2000 full cycles, giving ~**$0.038/kWh degradation cost**:  this becomes the floor for owner compensation.
 
 ---
 
 ## Scenarios and Stochasticity
 
-This is where the model becomes significantly more complex than the original paper. Three new stochastic dimensions are added on top of load, PV, wind, and price.
+This is where the model becomes significantly more complex than in the original paper. Three new stochastic dimensions are added on top of load, PV, wind, and price.
 
 ### New Scenario Dimensions
 
 #### 1. Driving/Parking Patterns
-- Arrival time distribution (residential: peak arrivals 6–8pm; commercial: 8–9am)
+- Arrival time distribution (residential: peak arrivals 6–8 pm; commercial: 8–9 am)
 - Departure time distribution
 - Distance driven per day → determines SoC on arrival
 - **Sources:** UK National Travel Survey, US National Household Travel Survey (NHTS)
@@ -143,16 +143,16 @@ With K-means clustering, target 30–50 representative scenarios, but each is no
 ### EV-Specific Edge Cases
 
 #### 1. The "Monday Morning Problem"
-EVs used heavily over the weekend arrive Monday with very low SoC. The grid cannot extract much energy precisely when post-weekend demand may be high. The model needs a minimum SoC guarantee that holds regardless of grid needs.
+EVs used heavily over the weekend arrive on Monday with very low SoC. The grid cannot extract much energy precisely when post-weekend demand may be high. The model needs a minimum SoC guarantee that holds regardless of grid needs.
 
 #### 2. Cold Weather Battery Derating
-At −10°C, usable battery capacity drops ~20–30%. This correlates with exactly the high-demand winter periods when the grid needs storage most. Perversely, when the grid needs EVs most, they are least capable. Must be captured in seasonal scenarios.
+At −10°C, usable battery capacity drops by ~20–30%. This correlates with exactly the high-demand winter periods when the grid needs storage most. Perversely, when the grid needs EVs most, they are least capable. Must be captured in seasonal scenarios.
 
 #### 3. Simultaneous Departure Events
-If many EVs at a residential bus all depart at 7:30am, the grid must stop discharging and actually *charge* all of them within a narrow window. This can create demand spikes worse than without V2G. Model by constraining net power flow in the final hour before peak departure time.
+If many EVs at a residential bus all depart at 7:30 am, the grid must stop discharging and actually *charge* all of them within a narrow window. This can create demand spikes worse than those without V2G. Model by constraining net power flow in the final hour before peak departure time.
 
 #### 4. Emergency Override
-Owner needs the car unexpectedly (medical, etc.). Model a fraction of the fleet as permanently "interruptible" — always able to leave regardless of grid dispatch. This reduces effective dispatchable capacity by ~10–15%.
+The owner needs the car unexpectedly (medical, etc.). Model a fraction of the fleet as permanently "interruptible":  always able to leave regardless of grid dispatch. This reduces effective dispatchable capacity by ~10–15%.
 
 #### 5. Charger Bidirectionality Penetration
 Not all EVs have V2G-capable chargers today. Assume 30–40% of parked EVs are actually dispatchable as a conservative baseline, and sweep this as a sensitivity parameter.
@@ -169,14 +169,14 @@ EVs tend to park at residential buses, but voltage/congestion problems may be at
 Many bidirectional chargers inject harmonics into the grid. The SOCP model ignores this (as does the original paper), but it is a real constraint on how many chargers can share one feeder. Flag as a limitation.
 
 #### 9. Charger as Reactive Power Source
-Modern bidirectional chargers can inject/absorb reactive power independently of active power. This means EV chargers could be modeled as *always-available* reactive power sources even when not doing V2G active discharge — potentially a significant advantage over the original DSS model that changes the economics considerably.
+Modern bidirectional chargers can inject/absorb reactive power independently of active power. This means EV chargers could be modeled as *always-available* reactive power sources even when not doing V2G active discharge:  potentially a significant advantage over the original DSS model that changes the economics considerably.
 
 ---
 
 ## Data Required
 
 ### Network Data
-- IEEE 34-bus feeder (same as paper — good starting point for comparability)
+- IEEE 34-bus feeder (same as paper:  good starting point for comparability)
 - Optional: a more realistic feeder with explicit residential/commercial/industrial bus classification
 
 ### EV Fleet Data
@@ -190,12 +190,12 @@ Modern bidirectional chargers can inject/absorb reactive power independently of 
 ### Mobility Data
 - Arrival/departure time distributions by bus type
 - Daily mileage distributions → SoC on arrival
-- **US:** [National Household Travel Survey (NHTS)](https://nhts.ornl.gov/) — freely available
+- **US:** [National Household Travel Survey (NHTS)](https://nhts.ornl.gov/):  freely available
 - **EU:** National travel surveys or synthetic data from MATSim
 
 ### Grid & Price Data
 - Same sources as the paper (or CAISO/ERCOT public data for a US case)
-- Time-of-use tariffs — important for computing owner opportunity cost $C_i^{opp}$
+- Time-of-use tariffs:  important for computing owner opportunity cost $C_i^{opp}$
 
 ### Compensation Benchmarking
 Real-world V2G pilot programs to anchor the $\lambda^{comp}$ range:
@@ -222,35 +222,35 @@ Real-world V2G pilot programs to anchor the $\lambda^{comp}$ range:
 ### EV/Mobility Simulation
 | Tool | Notes |
 |---|---|
-| SimPy | Python discrete-event simulation — good for modeling EV arrival/departure stochastics |
-| NumPy sampling | Sample from empirical distributions directly — sufficient for most scenario generation |
+| SimPy | Python discrete-event simulation:  good for modeling EV arrival/departure stochastics |
+| NumPy sampling | Sample from empirical distributions directly:  sufficient for most scenario generation |
 
 ### Scenario Generation & Clustering
 | Tool | Notes |
 |---|---|
 | scikit-learn K-means | Direct replacement for the paper's MATLAB clustering |
-| tslearn | Time-series specific clustering — better for multi-dimensional scenario matrix |
+| tslearn | Time-series specific clustering:  better for multi-dimensional scenario matrix |
 
 ### Sensitivity Analysis & Visualization
 | Tool | Notes |
 |---|---|
-| SALib | Python sensitivity analysis (Sobol indices, Morris method) — useful for sweeping compensation rates and penetration levels |
+| SALib | Python sensitivity analysis (Sobol indices, Morris method):  useful for sweeping compensation rates and penetration levels |
 | Plotly / Dash | Interactive visualization of Pareto frontiers and scenario results |
 
 ---
 
 ## Project Structure
 
-### Phase 1 — Baseline Replication
+### Phase 1:  Baseline Replication
 Reproduce the Nick et al. result on the IEEE 34-bus feeder. Validate that the SOCP implementation matches Table III of the paper (DSS at buses 22 and 34, with the reported sizes). This isolates any implementation errors before modifications begin.
 
-### Phase 2 — EV Fleet Substitution
+### Phase 2:  EV Fleet Substitution
 Replace DSS units with an EV fleet of equivalent total energy capacity. Keep everything else identical to the baseline. Measure how much performance degrades due to stochastic availability alone. This isolates the **"controllability penalty"** of using EVs vs dedicated storage.
 
-### Phase 3 — Compensation Optimization
+### Phase 3:  Compensation Optimization
 Add the compensation rate $\lambda^{comp}$ as a decision variable. Find the Pareto frontier between DNO cost and owner compensation. Key output: *at what compensation rate does V2G become preferable to dedicated DSSs from the DNO's perspective?*
 
-### Phase 4 — Sensitivity Analysis
+### Phase 4:  Sensitivity Analysis
 Sweep across the following parameters independently and in combination:
 
 - EV penetration: 10%, 30%, 50%, 70% of buses
@@ -259,8 +259,8 @@ Sweep across the following parameters independently and in combination:
 - Battery size distribution (small vs large vehicle mix)
 - Departure guarantee SoC: 70%, 80%, 90%
 
-### Phase 5 — Hybrid Scenario
-Model a mixed fleet: some dedicated DSSs at the most critical buses (where EV availability is low or unreliable), supplemented by V2G elsewhere. This is likely the most realistic and policy-relevant outcome, a transitional infrastructure model as EV penetration grows.
+### Phase 5:  Hybrid Scenario
+Model a mixed fleet: some dedicated DSSs at the most critical buses (where EV availability is low or unreliable), supplemented by V2G elsewhere. This is likely the most realistic and policy-relevant outcome: a transitional infrastructure model as EV penetration grows.
 
 ---
 
